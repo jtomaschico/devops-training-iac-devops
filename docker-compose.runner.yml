@@ -11,7 +11,8 @@ services:
       RUNNER_WORKDIR: "/tmp/runner"
       RUNNER_LABELS: "self-hosted,linux,docker"
       # Requiere token de registro (de GitHub) o PAT según el modo
-      ACCESS_TOKEN: "${GITHUB_RUNNER_TOKEN}"
+      #ACCESS_TOKEN: "${GITHUB_RUNNER_TOKEN}"
+      RUNNER_TOKEN: "${GITHUB_RUNNER_TOKEN}"
     volumes:
       # Permite ejecutar docker/docker compose desde el runner usando el Docker del host
       - /var/run/docker.sock:/var/run/docker.sock
