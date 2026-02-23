@@ -11,6 +11,8 @@ volumes:
   jenkins-data:
   jenkins-docker-certs:
   artifactory-data:
+  gha-runner-work:
+  gitlab-runner-config:
   # postgresql-vol:
   # sonarqube-vol:
 
@@ -87,6 +89,76 @@ services:
           - artifactory
     hostname: artifactory
     restart: always
+
+  github-runner:
+    image: myoung34/github-runner:latest
+    profiles:
+      - github-runner
+    restart: unless-stopped
+    environment:
+      REPO_URL: ${GITHUB_RUNNER_REPO_URL:-}
+      RUNNER_NAME: ${GITHUB_RUNNER_NAME:-local-runner-01}
+      RUNNER_WORKDIR: /tmp/runner
+      RUNNER_LABELS: ${GITHUB_RUNNER_LABELS:-self-hosted,linux,docker}
+      ACCESS_TOKEN: ${GITHUB_RUNNER_TOKEN:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gha-runner-work:/tmp/runner
+    networks:
+      - devops_training_net
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:alpine
+    profiles:
+      - gitlab-runner
+    restart: unless-stopped
+    environment:
+      GITLAB_URL: ${GITLAB_URL:-https://gitlab.com}
+      GITLAB_REGISTRATION_TOKEN: ${GITLAB_REGISTRATION_TOKEN:-}
+      GITLAB_RUNNER_NAME: ${GITLAB_RUNNER_NAME:-local-gitlab-runner}
+      GITLAB_RUNNER_TAGS: ${GITLAB_RUNNER_TAGS:-local,docker}
+      GITLAB_DOCKER_IMAGE: ${GITLAB_DOCKER_IMAGE:-docker:27}
+    volumes:
+      - gitlab-runner-config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: >
+      sh -lc '
+      if [ ! -s /etc/gitlab-runner/config.toml ]; then
+        if [ -z "$$GITLAB_REGISTRATION_TOKEN" ]; then
+          echo "ERROR: Missing GITLAB_REGISTRATION_TOKEN";
+          exit 1;
+        fi;
+        gitlab-runner register --non-interactive
+          --url "$$GITLAB_URL"
+          --registration-token "$$GITLAB_REGISTRATION_TOKEN"
+          --executor "docker"
+          --docker-image "$$GITLAB_DOCKER_IMAGE"
+          --docker-volumes "/var/run/docker.sock:/var/run/docker.sock"
+          --description "$$GITLAB_RUNNER_NAME"
+          --tag-list "$$GITLAB_RUNNER_TAGS"
+          --run-untagged="true"
+          --locked="false";
+      fi;
+      exec gitlab-runner run --user=gitlab-runner --working-directory=/home/gitlab-runner
+      '
+    networks:
+      - devops_training_net
+
+  azure-agent:
+    image: mcr.microsoft.com/azure-pipelines/vsts-agent:latest
+    profiles:
+      - azure-agent
+    restart: unless-stopped
+    environment:
+      AZP_URL: ${AZP_URL:-}
+      AZP_TOKEN: ${AZP_TOKEN:-}
+      AZP_POOL: ${AZP_POOL:-local-docker}
+      AZP_AGENT_NAME: ${AZP_AGENT_NAME:-local-azp-agent-01}
+      AZP_WORK: /azp/_work
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - devops_training_net
 
   # sonarqube:
   #   image: sonarqube:9.9.0-community

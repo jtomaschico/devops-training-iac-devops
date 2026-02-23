@@ -1,0 +1,34 @@
+name: "devops-lib"
+description: "Build and run commands in a CI Docker image"
+inputs:
+  ci_image:
+    description: "CI image name (tag)"
+    required: true
+  ci_dockerfile:
+    description: "Path to CI Dockerfile"
+    required: false
+    default: "devops/ci.Dockerfile"
+  command:
+    description: "Command to run inside the CI image"
+    required: true
+  workdir:
+    description: "Working directory inside container"
+    required: false
+    default: "/app"
+  build:
+    description: "Whether to build the CI image before running"
+    required: false
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    - name: Build CI image
+      if: ${{ inputs.build == 'true' }}
+      shell: bash
+      run: |
+        docker build -t "${{ inputs.ci_image }}" -f "${{ inputs.ci_dockerfile }}" .
+    - name: Run command in CI image
+      shell: bash
+      run: |
+        docker run --rm -v "${GITHUB_WORKSPACE}:/app" -w "${{ inputs.workdir }}" \
+          "${{ inputs.ci_image }}" sh -lc "${{ inputs.command }}"

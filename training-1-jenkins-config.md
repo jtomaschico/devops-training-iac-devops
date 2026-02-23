@@ -42,6 +42,7 @@ Resumen de lo que despliega:
 Nota importante para el curso:
 - En la Práctica 1, el foco es Jenkins + DinD.
 - `registry` y `artifactory` se usan a partir de la Práctica 2 (publish de imágenes y artefactos), por eso ya vienen incluidos en el stack.
+<!-- SonarQube no se usa en estas prácticas; si aparece en el stack o documentación, se mantiene solo como ejemplo opcional. -->
 
 ## Configurar plugins de Jenkins
 Antes de levantar Jenkins, define plugins en:

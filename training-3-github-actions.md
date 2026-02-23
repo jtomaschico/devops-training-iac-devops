@@ -29,19 +29,43 @@ Simulamos 2 entornos:
 
 Reglas:
 - **CI** se ejecuta en cualquier rama.
-- **CD** solo se ejecuta si la rama es `develop` o `master` y el parámetro `RUN_CD` está activo.
+- **CD** se ejecuta si:
+  - `RUN_CD=true` (en cualquier rama), **o**
+  - la rama es `develop` o `master` (aunque `RUN_CD=false`).
+
+## Qué vas a construir (resultado final)
+
+### Pipeline Python
+- CI
+  - Ejecutar `make lint` en un contenedor `python:3.6-slim` (imagen de CI desde `devops/ci.Dockerfile`).
+  - Ejecutar tests unitarios en el mismo contenedor.
+  - Construir la imagen Docker de la app (sin push).
+- CD
+  - Levantar BBDD + App con Docker Compose en el runner.
+  - Mostrar logs del contenedor principal.
+  - Limpiar recursos con `docker compose down --volumes`.
+
+### Pipeline Java
+- CI
+  - Ejecutar `make lint` y `make test` en un contenedor `maven:3.8.6-openjdk-11-slim` (imagen de CI desde `devops/ci.Dockerfile`).
+  - Construir la imagen Docker de la app (sin push).
+- CD
+  - Levantar App con Docker Compose en el runner.
+  - Mostrar logs del contenedor principal.
+  - Limpiar recursos con `docker compose down --volumes`.
 
 ## Punto de partida: workflow dummy (010)
 En cada repo de proyecto (Python/Java) tienes ficheros de referencia:
-- `.github/workflows/workflow-dummy.yml` (plantilla inicial)
-- `.github/workflows/workflow-template.yml` (estructura final / guía, sin “código copiable”)
+- `.github/workflows/workflow-dummy.yml.template` (plantilla inicial)
+- `.github/workflows/workflow.yml.template` (estructura final / guía, sin “código copiable”)
+- `.github/workflows/workflow-full.yml.template` (estructura completa con TODOs y opcionales)
 
 Tu fichero “real” para que GitHub lo ejecute debe ser:
 - `.github/workflows/ci.yml`
 
 Ejercicio 0 (setup):
 1) Crea la carpeta `.github/workflows/` (si no existe).
-2) Copia `.github/workflows/workflow-dummy.yml` a `.github/workflows/ci.yml`.
+2) Copia `.github/workflows/workflow-dummy.yml.template` a `.github/workflows/ci.yml`.
 3) Haz commit y push. Comprueba en GitHub:
    - Actions -> workflow ejecutado
 
@@ -113,21 +137,40 @@ Qué documentar en el repo (README o en esta práctica):
   - Settings -> Secrets and variables -> Actions -> **Variables**
 - Secrets:
   - Settings -> Secrets and variables -> Actions -> **Secrets**
+- Environments (recomendado en este curso):
+  - Settings -> Environments -> **New environment**
+  - Crea `DEV` y `PRO`
+  - En cada environment:
+    - Añade **Environment variables** y **Environment secrets**
+    - (Opcional) añade protection rules si quieres aprobaciones manuales
 - Niveles:
   - **Repository**: aplica a todos los workflows del repo.
   - **Environment**: aplica solo cuando el job usa `environment:` (permite protecciones).
   - **Organization** (si aplica): centraliza para muchos repos.
 
-Tarea:
-1) Crea variables (Repository variables), por ejemplo:
+Tarea (usando Environments):
+1) Crea environments `DEV` y `PRO`:
+   - Settings -> Environments -> New environment
+2) Dentro de cada environment crea variables, por ejemplo:
    - `REGISTRY_HOST` (ej. `local-registry:5000` o `ghcr.io`)
    - `ARTIFACTORY_URL` (ej. `http://artifactory:8081/artifactory`)
-2) Crea secrets (Repository secrets), por ejemplo:
+3) Dentro de cada environment crea secrets, por ejemplo:
    - `REGISTRY_USER`, `REGISTRY_PASSWORD`
    - `ARTIFACTORY_USER`, `ARTIFACTORY_PASSWORD` (o token)
-3) En el workflow, úsalo así:
+4) En el workflow, declara el environment en el job:
+   - `environment: DEV` o `environment: PRO`
+   - Recomendado: seleccionar dinámicamente según rama:
+     - `environment: ${{ github.ref_name == 'master' && 'PRO' || 'DEV' }}`
+5) En el workflow, referencia así:
    - Variables: `${{ vars.REGISTRY_HOST }}` / `${{ vars.ARTIFACTORY_URL }}`
    - Secrets: `${{ secrets.REGISTRY_PASSWORD }}`
+
+Importante:
+- Estas variables/secrets son **por repositorio**. Debes crearlas en **cada proyecto** (Python y Java) para que los workflows funcionen.
+
+Notas:
+- Si no quieres usar environments, puedes crear variables/secrets a nivel Repository.
+- Las variables/secretos de Environment solo están disponibles si el job define `environment:`.
 
 Notas importantes (seguridad):
 - Los secrets se enmascaran en logs, pero no imprimas secretos deliberadamente.
@@ -137,15 +180,30 @@ Referencia:
 - https://docs.github.com/actions/security-guides/encrypted-secrets
 - https://docs.github.com/actions/deployment/targeting-different-environments/using-environments-for-deployment
 
+Nota equivalente en Azure DevOps (para práctica 5):
+- Crear variables:
+  - Pipeline -> Edit -> Variables (UI) o en YAML con `variables:`
+  - Variable Groups: Pipelines -> Library -> Variable groups
+- Referenciar variables en YAML:
+  - En scripts: `$(VAR_NAME)`
+  - En `env:`: `VAR_NAME: $(VAR_NAME)`
+- Variables secretas:
+  - Marca como secret en UI o en Variable Group
+  - Se enmascaran en logs por defecto
+
+Referencias Azure DevOps:
+- https://learn.microsoft.com/azure/devops/pipelines/process/variables
+- https://learn.microsoft.com/azure/devops/pipelines/library/variable-groups
+
 ### Ejercicio 6 - Docker como agente: job en contenedor
 Objetivo: ejecutar CI dentro de un contenedor, igual que hacíamos con `agent docker` en Jenkins.
 
 Tarea:
-- Python: ejecuta tests dentro de `python:3.6-slim`.
-- Java: ejecuta `make lint` y `make test` dentro de `maven:3.8.6-openjdk-11-slim`.
+- Python: construye una imagen de CI (`devops/ci.Dockerfile`) y ejecuta `make lint`/`make test` dentro de esa imagen.
+- Java: construye una imagen de CI (`devops/ci.Dockerfile`) y ejecuta `make lint`/`make test` dentro de esa imagen.
 
 Pista:
-- En GitHub Actions puedes usar `container:` a nivel de job.
+- En GitHub Actions puedes usar `container:` a nivel de job o ejecutar `docker run` con la imagen de CI.
 
 Referencia:
 - https://docs.github.com/actions/using-jobs/running-jobs-in-a-container
@@ -160,9 +218,9 @@ Tarea:
 Objetivo: simular despliegue por entornos.
 
 Tarea:
-- Crea un job `cd` (o stage equivalente) que solo se ejecute si:
-  - `github.ref_name` es `develop` o `master`, y
-  - `inputs.RUN_CD == true` (workflow dispatch)
+- Crea un job `cd` (o stage equivalente) que se ejecute si:
+  - `inputs.RUN_CD == true` (workflow dispatch), **o**
+  - `github.ref_name` es `develop` o `master`
 
 Pista:
 - Usa `if:` a nivel de job.
@@ -173,7 +231,7 @@ Referencia:
 ### Ejercicio 9 - Simulación de despliegue con Docker Compose + cleanup
 Objetivo: simular CD en un runner efímero:
 1) `docker compose up -d`
-2) test e2e con `curl`
+2) mostrar logs del contenedor principal
 3) cleanup siempre, aunque falle
 
 Tarea:
@@ -197,6 +255,47 @@ Referencia:
 ### Opcional B (Java) - Subir el `.jar` a Artifactory con `curl` (sin plugin)
 Igual que en Práctica 2, pero ejecutándolo desde un step de GitHub Actions usando secretos.
 
+### Opcional C - Librería común (composite action) en repo IaC
+Objetivo: reutilizar pasos comunes entre Python y Java.
+
+Tarea:
+1) usando una acción compuesta en el repo IaC:
+   - Ruta: `.github/actions/devops-lib/action.yml`
+2) Encapsula al menos:
+   - Build de la imagen de CI (`devops/ci.Dockerfile`)
+   - Ejecución de comandos dentro de esa imagen
+3) Usa esa acción en los workflows de Python y Java (opcional):
+   - `uses: <org>/devops-training-iac-devops/.github/actions/devops-lib@<ref>`
+
+Configuración en GitHub (librería común):
+1) Publica el repo IaC con la acción compuesta en una rama o tag estable:
+   - Recomendado: crear un tag (ej. `v1.0.0`) o usar una rama específica (`main`/`develop`).
+2) En el repo consumidor (Python/Java), referencia la acción:
+   - `uses: <org>/devops-training-iac-devops/.github/actions/devops-lib@<ref>`
+   - `@<ref>` debe ser un tag o branch existente.
+3) Verifica permisos:
+   - Actions -> General -> Workflow permissions: `Read repository contents`
+   - Si el repo IaC es privado, el repo consumidor debe tener acceso (mismo org o permisos explícitos).
+
+Gestión de variables de entorno y secretos:
+- Variables (Actions -> Variables):
+  - Settings -> Secrets and variables -> Actions -> Variables
+  - Usa `${{ vars.VAR_NAME }}` en el workflow.
+  - Útil para `REGISTRY_HOST`, `ARTIFACTORY_URL`, `REGISTRY_REPO`, etc.
+- Secrets (Actions -> Secrets):
+  - Settings -> Secrets and variables -> Actions -> Secrets
+  - Usa `${{ secrets.SECRET_NAME }}` en el workflow.
+  - Útil para `REGISTRY_USER`, `REGISTRY_PASSWORD`, `ARTIFACTORY_USER`, `ARTIFACTORY_PASSWORD`.
+- Scope recomendado:
+  - Repository: para prácticas del curso.
+  - Environment: si quieres diferenciar DEV/PRO con aprobaciones.
+
+Referencias oficiales:
+- Reusable workflows/composite actions: https://docs.github.com/actions/creating-actions/creating-a-composite-action
+- Sharing actions in a repo: https://docs.github.com/actions/creating-actions/sharing-actions
+- Variables: https://docs.github.com/actions/learn-github-actions/variables
+- Secrets: https://docs.github.com/actions/security-guides/encrypted-secrets
+
 ## Ejercicio final - Runner self-hosted en local con Docker Compose (on-prem)
 Objetivo: ejecutar workflows de GitHub Actions **desde tu máquina/red** para tener conectividad con:
 - Registry privado local
@@ -215,44 +314,25 @@ En GitHub:
 Nota:
 - Para este curso lo vamos a ejecutar dentro de un contenedor con Docker Compose.
 
-### Paso 2 - Docker Compose del runner (plantilla)
-Crea un fichero `docker-compose.runner.yml` (por ejemplo en el repo IaC o en tu entorno local):
-```yaml
-version: "3.8"
+### Paso 2 - Usar el runner ya incluido en el stack IaC
+En `devops-training-iac-devops/docker-compose.yml` ya existe el servicio `github-runner` con perfil opcional `github-runner`.
 
-services:
-  gha-runner:
-    image: myoung34/github-runner:latest
-    restart: unless-stopped
-    environment:
-      # TODO: configura estas variables según el asistente de GitHub
-      REPO_URL: "https://github.com/<org>/<repo>"
-      RUNNER_NAME: "local-runner-01"
-      RUNNER_WORKDIR: "/tmp/runner"
-      RUNNER_LABELS: "self-hosted,linux,docker"
-      # Requiere token de registro (de GitHub) o PAT según el modo
-      ACCESS_TOKEN: "${GITHUB_RUNNER_TOKEN}"
-    volumes:
-      # Permite ejecutar docker/docker compose desde el runner usando el Docker del host
-      - /var/run/docker.sock:/var/run/docker.sock
-      - gha-runner-work:/tmp/runner
-    networks:
-      - devops_training_net
+Variables necesarias:
+- `GITHUB_RUNNER_REPO_URL` (ej. `https://github.com/<org>/<repo>`)
+- `GITHUB_RUNNER_TOKEN` (token de registro o PAT según tu estrategia)
+- `GITHUB_RUNNER_NAME` (opcional)
+- `GITHUB_RUNNER_LABELS` (opcional, recomendado: `self-hosted,linux,docker`)
 
-volumes:
-  gha-runner-work:
+Plantilla incluida:
+- `devops-training-iac-devops/.env.github-runner.example`
 
-networks:
-  # Reutiliza la red donde viven registry/artifactory en tu stack IaC (ajusta el nombre si cambia)
-  devops_training_net:
-    external: true
-```
-
-### Paso 3 - Ejecutar el runner
+### Paso 3 - Ejecutar el runner con Docker Compose
+Desde `devops-training-iac-devops/`:
 ```bash
-export GITHUB_RUNNER_TOKEN="<token>"
-docker compose -f docker-compose.runner.yml up -d
-docker compose -f docker-compose.runner.yml logs -f
+cp .env.github-runner.example .env.github-runner
+# Edita .env.github-runner con valores reales
+docker compose --env-file .env.github-runner --profile github-runner up -d github-runner
+docker compose --env-file .env.github-runner logs -f github-runner
 ```
 
 ### Paso 4 - Usar el runner en el workflow
