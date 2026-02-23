@@ -8,7 +8,8 @@ services:
       # TODO: configura estas variables según el asistente de GitHub
       REPO_URL: "https://github.com/jtomaschico/devops-training-iac-devops"
       RUNNER_SCOPE: "repo"
-      RUNNER_NAME: "local-runner-01"
+      #RUNNER_NAME: "local-runner-01"
+      RUNNER_NAME: "UNED2"
       RUNNER_WORKDIR: "/tmp/runner"
       RUNNER_LABELS: "self-hosted,linux,docker"
       # Requiere token de registro (de GitHub) o PAT según el modo
