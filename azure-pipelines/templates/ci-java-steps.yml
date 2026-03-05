@@ -1,11 +1,7 @@
-parameters:
-  mavenImage: "maven:3.8.6-openjdk-11-slim"
-  lintCommand: "make lint"
-  testCommand: "make test"
-
 steps:
   - script: |
       docker run --rm \
+      -u $(id -u):$(id -g) \
       -v $(Build.SourcesDirectory):/workspace \
       -w /workspace \
       ${{ parameters.mavenImage }} \
@@ -14,6 +10,7 @@ steps:
 
   - script: |
       docker run --rm \
+      -u $(id -u):$(id -g) \
       -v $(Build.SourcesDirectory):/workspace \
       -w /workspace \
       ${{ parameters.mavenImage }} \
