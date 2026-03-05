@@ -2,17 +2,17 @@ steps:
   - script: |
       docker run --rm \
       -u $(id -u):$(id -g) \
-      -v $(Build.SourcesDirectory):/workspace \
+      -v "$(Build.SourcesDirectory)":/workspace \
       -w /workspace \
       ${{ parameters.mavenImage }} \
-      bash -c "apt-get update && apt-get install -y make && ${{ parameters.lintCommand }}"
+      bash -c 'apt-get update && apt-get install -y make && '"${{ parameters.lintCommand }}"
     displayName: "Lint"
 
   - script: |
       docker run --rm \
       -u $(id -u):$(id -g) \
-      -v $(Build.SourcesDirectory):/workspace \
+      -v "$(Build.SourcesDirectory)":/workspace \
       -w /workspace \
       ${{ parameters.mavenImage }} \
-      bash -c "apt-get update && apt-get install -y make && ${{ parameters.testCommand }}"
+      bash -c 'apt-get update && apt-get install -y make && '"${{ parameters.testCommand }}"
     displayName: "Test"
