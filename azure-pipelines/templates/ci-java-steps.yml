@@ -1,22 +1,23 @@
 parameters:
+  mavenImage: "maven:3.8.6-openjdk-11-slim"
   lintCommand: "make lint"
   testCommand: "make test"
 
 steps:
-  # Instalar make
   - script: |
-      apt-get update && apt-get install -y make
-    displayName: "Instalar Make"
-
-  # Lint
-  - script: |
-      ${{ parameters.lintCommand }}
+      docker run --rm \
+        -u $(id -u):$(id -g) \
+        -v "$(Build.SourcesDirectory)":/workspace \
+        -w /workspace \
+        ${{ parameters.mavenImage }} \
+        bash -c "${{ parameters.lintCommand }}"
     displayName: "Lint"
 
-  # Test
   - script: |
-      ${{ parameters.testCommand }}
+      docker run --rm \
+        -u $(id -u):$(id -g) \
+        -v "$(Build.SourcesDirectory)":/workspace \
+        -w /workspace \
+        ${{ parameters.mavenImage }} \
+        bash -c "${{ parameters.testCommand }}"
     displayName: "Test"
-        
-
-      
