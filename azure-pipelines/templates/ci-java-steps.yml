@@ -3,7 +3,7 @@
 # En la Práctica 5 se reutiliza este template desde el repo IaC.
 
 parameters:
-  mavenImage: "maven:3.8.6-openjdk-11-slim"
+  mavenImage: "maven:3.8.6-openjdk-11"
   lintCommand: "make lint"
   testCommand: "make test"
 
@@ -11,11 +11,11 @@ steps:
   - script: |
       echo "TODO: ejecutar en contenedor: ${{ parameters.mavenImage }}"
       ${{ parameters.lintCommand }}"
-    displayName: "Lint (TODO)"
+    displayName: "Lint"
 
   - script: |
       echo "TODO: ejecutar en contenedor: ${{ parameters.mavenImage }}"
       ${{ parameters.testCommand }}"
-    displayName: "Test (TODO)"
+    displayName: "Test"
 
     # Template (Azure Pipelines) - CI Java (steps)
