@@ -2,28 +2,19 @@ parameters:
   mavenImage: "maven:3.8.6-openjdk-11-slim"
   lintCommand: "make lint"
   testCommand: "make test"
-
-jobs:
-  - job: CI_Java
-    displayName: "CI Java (container con usuario correcto)"
-    container:
-      image: ${{ parameters.mavenImage }}
-      # Ejecutar con el mismo usuario que el agente para evitar problemas de permisos
-      options: "--user $(id -u):$(id -g)"
-    steps:
-      # Instalar make (y cualquier otra herramienta necesaria)
-      - script: |
+steps:
+  - script: |
           apt-get update && apt-get install -y make
         displayName: "Instalar Make"
+  - script: |
+      ${{ parameters.mavenImage }}
+      ${{ parameters.lintCommand }}
+    displayName: "Lint"
 
-      # Lint
-      - script: |
-          ${{ parameters.lintCommand }}
-        displayName: "Lint"
-
-      # Test
-      - script: |
-          ${{ parameters.testCommand }}
-        displayName: "Test"
+  - script: |
+      ${{ parameters.mavenImage }}
+      ${{ parameters.testCommand }}
+    displayName: "Test"
+        
 
       
