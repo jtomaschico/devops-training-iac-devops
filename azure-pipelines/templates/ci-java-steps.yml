@@ -10,11 +10,12 @@ parameters:
 steps:
   - script: |
       echo "TODO: ejecutar en contenedor: ${{ parameters.mavenImage }}"
-      echo "TODO: ${{ parameters.lintCommand }}"
+      ${{ parameters.lintCommand }}"
     displayName: "Lint (TODO)"
 
   - script: |
       echo "TODO: ejecutar en contenedor: ${{ parameters.mavenImage }}"
-      echo "TODO: ${{ parameters.testCommand }}"
+      ${{ parameters.testCommand }}"
     displayName: "Test (TODO)"
 
+    # Template (Azure Pipelines) - CI Java (steps)
