@@ -6,10 +6,10 @@ parameters:
 steps:
   - script: |
       docker run --rm -v $(pwd):/workspace -w /workspace ${{ parameters.mavenImage }} \
-      sh -c "${{ parameters.lintCommand }}"
+      bash -c "apt-get update && apt-get install -y make && ${{ parameters.lintCommand }}"
     displayName: "Lint"
 
   - script: |
       docker run --rm -v $(pwd):/workspace -w /workspace ${{ parameters.mavenImage }} \
-      sh -c "${{ parameters.testCommand }}"
+      bash -c "apt-get update && apt-get install -y make && ${{ parameters.testCommand }}"
     displayName: "Test"
