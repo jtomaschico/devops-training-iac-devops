@@ -6,7 +6,6 @@ parameters:
 steps:
   - script: |
       docker run --rm \
-      -u $(id -u):$(id -g) \
       -v $(Build.SourcesDirectory):/workspace \
       -w /workspace \
       ${{ parameters.mavenImage }} \
@@ -15,7 +14,6 @@ steps:
 
   - script: |
       docker run --rm \
-      -u $(id -u):$(id -g) \
       -v $(Build.SourcesDirectory):/workspace \
       -w /workspace \
       ${{ parameters.mavenImage }} \
