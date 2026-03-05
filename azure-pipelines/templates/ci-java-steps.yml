@@ -4,25 +4,24 @@ parameters:
   testCommand: "make test"
 
 jobs:
-  - job: CI_Template
+  - job: CI_Java
     displayName: "CI Java (container con usuario correcto)"
-    # Ejecuta todo el job dentro del contenedor Maven
     container:
       image: ${{ parameters.mavenImage }}
-      # Usa el mismo usuario del agente para evitar problemas de permisos
+      # Ejecutar con el mismo usuario que el agente para evitar problemas de permisos
       options: "--user $(id -u):$(id -g)"
     steps:
-      # Instalar make (y cualquier otra herramienta que falte)
+      # Instalar make (y cualquier otra herramienta necesaria)
       - script: |
           apt-get update && apt-get install -y make
         displayName: "Instalar Make"
 
-      # Ejecutar lint
+      # Lint
       - script: |
           ${{ parameters.lintCommand }}
         displayName: "Lint"
 
-      # Ejecutar tests
+      # Test
       - script: |
           ${{ parameters.testCommand }}
         displayName: "Test"
