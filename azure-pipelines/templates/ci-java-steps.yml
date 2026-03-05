@@ -1,18 +1,28 @@
-steps:
-  - script: |
-      docker run --rm \
-      -u $(id -u):$(id -g) \
-      -v "$(Build.SourcesDirectory)":/workspace \
-      -w /workspace \
-      ${{ parameters.mavenImage }} \
-      bash -c 'apt-get update && apt-get install -y make && '"${{ parameters.lintCommand }}"
-    displayName: "Lint"
+parameters:
+  mavenImage: "maven:3.8.6-openjdk-11-slim"
+  lintCommand: "make lint"
+  testCommand: "make test"
 
-  - script: |
-      docker run --rm \
-      -u $(id -u):$(id -g) \
-      -v "$(Build.SourcesDirectory)":/workspace \
-      -w /workspace \
-      ${{ parameters.mavenImage }} \
-      bash -c 'apt-get update && apt-get install -y make && '"${{ parameters.testCommand }}"
-    displayName: "Test"
+jobs:
+  - job: CI_Template
+    displayName: "CI Java (container con usuario correcto)"
+    # Ejecuta todo el job dentro del contenedor Maven
+    container:
+      image: ${{ parameters.mavenImage }}
+      # Usa el mismo usuario del agente para evitar problemas de permisos
+      options: "--user $(id -u):$(id -g)"
+    steps:
+      # Instalar make (y cualquier otra herramienta que falte)
+      - script: |
+          apt-get update && apt-get install -y make
+        displayName: "Instalar Make"
+
+      # Ejecutar lint
+      - script: |
+          ${{ parameters.lintCommand }}
+        displayName: "Lint"
+
+      # Ejecutar tests
+      - script: |
+          ${{ parameters.testCommand }}
+        displayName: "Test"
