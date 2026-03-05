@@ -6,18 +6,25 @@ parameters:
 steps:
   - script: |
       docker run --rm \
-        -u $(id -u):$(id -g) \
         -v "$(Build.SourcesDirectory)":/workspace \
         -w /workspace \
         ${{ parameters.mavenImage }} \
-        bash -c "${{ parameters.lintCommand }}"
+        bash -c "apt-get update && apt-get install -y make && ${{ parameters.lintCommand }}"
     displayName: "Lint"
 
   - script: |
       docker run --rm \
-        -u $(id -u):$(id -g) \
         -v "$(Build.SourcesDirectory)":/workspace \
         -w /workspace \
         ${{ parameters.mavenImage }} \
-        bash -c "${{ parameters.testCommand }}"
+        bash -c "apt-get update && apt-get install -y make && ${{ parameters.testCommand }}"
     displayName: "Test"
+
+  # Añadimos el comando 'chown' para corregir permisos
+  - script: |
+      docker run --rm \
+        -v "$(Build.SourcesDirectory)":/workspace \
+        -w /workspace \
+        ${{ parameters.mavenImage }} \
+        bash -c "chown -R $(id -u):$(id -g) /workspace"
+    displayName: "Corregir permisos"
