@@ -4,38 +4,15 @@ parameters:
   testCommand: "make test"
 
 steps:
-  # Instalar `make` solo una vez
+  # Paso 1: Ejecutar todo en un solo contenedor
   - script: |
       docker run --rm \
         -v "$(Build.SourcesDirectory)":/workspace \
         -w /workspace \
         ${{ parameters.mavenImage }} \
-        bash -c "apt-get update && apt-get install -y make"
-    displayName: "Instalar Make"
-  
-  # Ejecutar el comando de Lint
-  - script: |
-      docker run --rm \
-        -v "$(Build.SourcesDirectory)":/workspace \
-        -w /workspace \
-        ${{ parameters.mavenImage }} \
-        bash -c "${{ parameters.lintCommand }}"
-    displayName: "Lint"
-  
-  # Ejecutar el comando de Test
-  - script: |
-      docker run --rm \
-        -v "$(Build.SourcesDirectory)":/workspace \
-        -w /workspace \
-        ${{ parameters.mavenImage }} \
-        bash -c "${{ parameters.testCommand }}"
-    displayName: "Test"
-  
-  # Corregir permisos en el workspace
-  - script: |
-      docker run --rm \
-        -v "$(Build.SourcesDirectory)":/workspace \
-        -w /workspace \
-        ${{ parameters.mavenImage }} \
-        bash -c "chown -R $(id -u):$(id -g) /workspace"
-    displayName: "Corregir permisos"
+        bash -c "
+          apt-get update && apt-get install -y make && \  # Instalamos `make` solo una vez
+          ${{ parameters.lintCommand }} && \  # Ejecutamos el comando de lint (make lint)
+          ${{ parameters.testCommand }} && \  # Ejecutamos el comando de tests (make test)
+          chown -R $(id -u):$(id -g) /workspace"  # Corregimos los permisos del workspace
+    displayName: "Lint, Test y Corregir permisos"
