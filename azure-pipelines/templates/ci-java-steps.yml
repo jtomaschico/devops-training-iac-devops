@@ -4,23 +4,34 @@ parameters:
   testCommand: "make test"
 
 steps:
+  # Instalar `make` solo una vez
   - script: |
       docker run --rm \
         -v "$(Build.SourcesDirectory)":/workspace \
         -w /workspace \
         ${{ parameters.mavenImage }} \
-        bash -c "apt-get update && apt-get install -y make && ${{ parameters.lintCommand }}"
+        bash -c "apt-get update && apt-get install -y make"
+    displayName: "Instalar Make"
+  
+  # Ejecutar el comando de Lint
+  - script: |
+      docker run --rm \
+        -v "$(Build.SourcesDirectory)":/workspace \
+        -w /workspace \
+        ${{ parameters.mavenImage }} \
+        bash -c "${{ parameters.lintCommand }}"
     displayName: "Lint"
   
+  # Ejecutar el comando de Test
   - script: |
       docker run --rm \
         -v "$(Build.SourcesDirectory)":/workspace \
         -w /workspace \
         ${{ parameters.mavenImage }} \
-        bash -c "apt-get update && apt-get install -y make && ${{ parameters.testCommand }}"
+        bash -c "${{ parameters.testCommand }}"
     displayName: "Test"
   
-  # Añadimos el comando 'chown' para corregir permisos
+  # Corregir permisos en el workspace
   - script: |
       docker run --rm \
         -v "$(Build.SourcesDirectory)":/workspace \
