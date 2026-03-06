@@ -2,9 +2,10 @@ parameters:
   mavenImage: "maven:3.8.6-openjdk-11-slim"
   lintCommand: "make lint"
   testCommand: "make test"
+  dockerImageName: "myapp"
 
 steps:
-  # Paso 1: Ejecutar todo en un solo contenedor
+  # Ejecutar todo en un solo contenedor
   - script: |
       docker run --rm \
         -v "$(Build.SourcesDirectory)":/workspace \
