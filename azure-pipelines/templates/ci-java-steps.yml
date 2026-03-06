@@ -2,7 +2,6 @@ parameters:
   mavenImage: "maven:3.8.6-openjdk-11-slim"
   lintCommand: "make lint"
   testCommand: "make test"
-  dockerImageName: $(IMAGE_NAME)
 
 steps:
   # Ejecutar todo en un solo contenedor
@@ -20,5 +19,5 @@ steps:
 
   # Build de la imagen Docker
   - script: |
-      docker build -t ${{ parameters.dockerImageName }} .
+      docker build -t $(IMAGE_NAME) --build-arg VERSION=$(Build.BuildId) -f devops/Dockerfile .
     displayName: "Build Docker Image"  
