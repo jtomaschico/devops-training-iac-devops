@@ -4,15 +4,38 @@ parameters:
   testCommand: "make test"  # Comando para ejecutar los tests
 
 steps:
-  # Ejecutar todo en un solo `docker run`
+  # Paso 1: Instalar `make` solo una vez
   - script: |
       docker run --rm \
         -v "$(Build.SourcesDirectory)":/workspace \  # Montamos el directorio de trabajo en el contenedor
         -w /workspace \  # Establecemos el directorio de trabajo dentro del contenedor
         ${{ parameters.mavenImage }} \  # Usamos la imagen base de Maven
-        bash -c "
-          apt-get update && apt-get install -y make && \  # Instalamos `make` solo una vez
-          ${{ parameters.lintCommand }} && \  # Ejecutamos el comando de lint (make lint)
-          ${{ parameters.testCommand }} && \  # Ejecutamos el comando de tests (make test)
-          chown -R $(id -u):$(id -g) /workspace"  # Corregimos los permisos del workspace
-    displayName: "Lint, Test y Corregir permisos"  # Nombre del paso
+        bash -c "apt-get update && apt-get install -y make"  # Instalamos `make` dentro del contenedor
+    displayName: "Instalar Make"  # Nombre del paso
+
+  # Paso 2: Ejecutar el comando de Lint
+  - script: |
+      docker run --rm \
+        -v "$(Build.SourcesDirectory)":/workspace \  # Montamos el directorio de trabajo
+        -w /workspace \  # Establecemos el directorio de trabajo dentro del contenedor
+        ${{ parameters.mavenImage }} \  # Usamos la imagen base de Maven
+        bash -c "${{ parameters.lintCommand }}"  # Ejecutamos el comando de lint (make lint)
+    displayName: "Lint"  # Nombre del paso
+
+  # Paso 3: Ejecutar el comando de Test
+  - script: |
+      docker run --rm \
+        -v "$(Build.SourcesDirectory)":/workspace \  # Montamos el directorio de trabajo
+        -w /workspace \  # Establecemos el directorio de trabajo dentro del contenedor
+        ${{ parameters.mavenImage }} \  # Usamos la imagen base de Maven
+        bash -c "${{ parameters.testCommand }}"  # Ejecutamos el comando de tests (make test)
+    displayName: "Test"  # Nombre del paso
+
+  # Paso 4: Corregir permisos en el workspace
+  - script: |
+      docker run --rm \
+        -v "$(Build.SourcesDirectory)":/workspace \  # Montamos el directorio de trabajo
+        -w /workspace \  # Establecemos el directorio de trabajo dentro del contenedor
+        ${{ parameters.mavenImage }} \  # Usamos la imagen base de Maven
+        bash -c "chown -R $(id -u):$(id -g) /workspace"  # Corregimos los permisos de todo el workspace
+    displayName: "Corregir permisos"  # Nombre del paso
