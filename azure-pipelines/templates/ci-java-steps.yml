@@ -2,7 +2,7 @@ parameters:
   mavenImage: "maven:3.8.6-openjdk-11-slim"
   lintCommand: "make lint"
   testCommand: "make test"
-  dockerImageName: "myapp"
+  dockerImageName: $(IMAGE_NAME)
 
 steps:
   # Ejecutar todo en un solo contenedor
@@ -17,3 +17,8 @@ steps:
           ${{ parameters.testCommand }} && \  # Ejecutamos el comando de tests (make test)
           chown -R $(id -u):$(id -g) /workspace"  # Corregimos los permisos del workspace
     displayName: "Lint, Test y Corregir permisos"
+
+  # Build de la imagen Docker
+  - script: |
+      docker build -t ${{ parameters.dockerImageName }} .
+    displayName: "Build Docker Image"  
