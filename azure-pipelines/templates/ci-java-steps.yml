@@ -16,8 +16,3 @@ steps:
           ${{ parameters.testCommand }} && \  # Ejecutamos el comando de tests (make test)
           chown -R $(id -u):$(id -g) /workspace"  # Corregimos los permisos del workspace
     displayName: "Lint, Test y Corregir permisos"
-
-  # Build de la imagen Docker
-  #- script: |
-   #   docker build -t $(IMAGE_NAME) --build-arg VERSION=$(Build.BuildId) -f devops/Dockerfile .
-    #displayName: "Build Docker Image"  
