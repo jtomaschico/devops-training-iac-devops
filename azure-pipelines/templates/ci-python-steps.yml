@@ -11,5 +11,3 @@ steps:
       pip install -r ${{ parameters.requirementsFile }}
       ${{ parameters.testCommand }}
     displayName: "CI Python"
-    container: ${{ parameters.pythonImage }}
-
