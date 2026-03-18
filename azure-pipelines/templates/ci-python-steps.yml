@@ -1,13 +1,20 @@
 # Template (Azure Pipelines) - CI Python (steps)
 
 parameters:
-  pythonImage: "python:3.6-slim"
+  pythonImage: "python:3.10-slim"
   requirementsFile: "requirements.txt"
   testCommand: "pytest -q"
 
 steps:
   - script: |
-      pip install --upgrade pip
-      pip install -r ${{ parameters.requirementsFile }}
-      ${{ parameters.testCommand }}
-    displayName: "CI Python"
+      docker run --rm \
+        -v "$(Build.SourcesDirectory)":/workspace \
+        -w /workspace \
+        ${{ parameters.pythonImage }} \
+        bash -c "
+          python -m pip install --upgrade pip && \
+          python -m pip install -r ${{ parameters.requirementsFile }} && \
+          ${{ parameters.testCommand }} && \
+          chown -R $(id -u):$(id -g) /workspace
+        "
+    displayName: "Install + Test + Fix permissions"
