@@ -1,7 +1,4 @@
 # Template (Azure Pipelines) - CI Python (steps)
-#
-# Este template es un punto de partida para reutilizar steps de CI en varios repos.
-# En la Práctica 5 se pide que ambos proyectos consuman templates desde el repo IaC.
 
 parameters:
   pythonImage: "python:3.6-slim"
@@ -10,8 +7,9 @@ parameters:
 
 steps:
   - script: |
-      echo "TODO: ejecutar en contenedor: ${{ parameters.pythonImage }}"
-      echo "TODO: pip install -r ${{ parameters.requirementsFile }}"
-      echo "TODO: ${{ parameters.testCommand }}"
-    displayName: "CI Python (TODO)"
+      pip install --upgrade pip
+      pip install -r ${{ parameters.requirementsFile }}
+      ${{ parameters.testCommand }}
+    displayName: "CI Python"
+    container: ${{ parameters.pythonImage }}
 
