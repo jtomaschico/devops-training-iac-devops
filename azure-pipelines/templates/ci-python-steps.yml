@@ -17,4 +17,4 @@ steps:
           ${{ parameters.testCommand }} && \
           chown -R $(id -u):$(id -g) /workspace
         "
-    displayName: "Install + Test + Fix permissions"
+    displayName: "Install + Test + permissions"
