@@ -82,7 +82,7 @@ services:
       - artifactory-data:/var/opt/jfrog/artifactory
     networks:
       devops_training_net:
-        ipv4_address: 172.16.236.4
+        ipv4_address: 172.30.236.4
         aliases:
           - artifactory
     hostname: artifactory
