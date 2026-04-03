@@ -4,7 +4,7 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.16.236.0/24
+        - subnet: 172.30.236.0/24
 
 volumes:
   registry-data:
