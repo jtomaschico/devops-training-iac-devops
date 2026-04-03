@@ -58,7 +58,7 @@ services:
       - devops_training_net
     hostname: jenkins
     ports:
-      - "8085:8080"
+      - "8080:8080"
       - "50000:50000"
     depends_on:
       - dind
